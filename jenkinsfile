@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        GITLEAKS_PATH = "C:\\gitleaks\\gitleaks.exe"
-    }
-
     stages {
         stage('Checkout') {
             steps {
@@ -21,7 +17,7 @@ pipeline {
 
          stage('Gitleaks Secret Scan') {
             steps {
-                bat "${GITLEAKS_PATH} detect --source . --verbose"
+                bat 'detect --source . --verbose'
             }
         }
     }
