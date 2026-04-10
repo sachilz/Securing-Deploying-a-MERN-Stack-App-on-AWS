@@ -14,5 +14,11 @@ pipeline {
                 bat 'dir'
             }
         }
+
+         stage('Gitleaks Secret Scan') {
+            steps {
+                bat 'gitleaks detect --source . --verbose'
+            }
+        }
     }
 }
