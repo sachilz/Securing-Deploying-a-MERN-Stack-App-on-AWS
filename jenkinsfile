@@ -28,8 +28,8 @@ pipeline {
 
         stage('SonarQube Scan') {
             steps {
-                withSonarQubeEnv('sonarqube') {
-                    bat "\"${SONAR_SCANNER}\" -Dsonar.projectKey=dockerized-mern-app -Dsonar.sources=."
+                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                    bat "\"${SONAR_SCANNER}\" -Dsonar.projectKey=dockerized-mern-app -Dsonar.sources=. -Dsonar.login=%SONAR_TOKEN%"
                 }
             }
         }
