@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 
 function App() {
   const [users, setUsers] = useState([]);
@@ -9,13 +9,14 @@ function App() {
 
   const BASE_URL = process.env.REACT_APP_BACKEND_URL || "/api";
 
-  // 📥 GET users
-  const fetchUsers = async () => {
+  // 📥 GET users (FIXED with useCallback)
+  const fetchUsers = useCallback(async () => {
     try {
       const res = await fetch(`${BASE_URL}/users`);
       if (!res.ok) {
         throw new Error(`Failed to fetch users (${res.status})`);
       }
+
       const data = await res.json();
       setUsers(data);
       setError("");
@@ -23,17 +24,20 @@ function App() {
       setError("Cannot reach backend API. Check backend container and REACT_APP_BACKEND_URL.");
       console.error(err);
     }
-  };
+  }, [BASE_URL]);
 
+  // 🔄 Load users + auto refresh
   useEffect(() => {
     fetchUsers();
+
     const interval = setInterval(() => {
       fetchUsers();
     }, 3000);
-    return () => clearInterval(interval);
-  }, []);
 
-  // ➕ CREATE or ✏️ UPDATE
+    return () => clearInterval(interval);
+  }, [fetchUsers]);
+
+  // ➕ CREATE / ✏️ UPDATE
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -43,9 +47,9 @@ function App() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name, age }),
         });
-        if (!res.ok) {
-          throw new Error(`Failed to update user (${res.status})`);
-        }
+
+        if (!res.ok) throw new Error(`Failed to update user (${res.status})`);
+
         setEditId(null);
       } else {
         const res = await fetch(`${BASE_URL}/user`, {
@@ -53,10 +57,10 @@ function App() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name, age }),
         });
-        if (!res.ok) {
-          throw new Error(`Failed to create user (${res.status})`);
-        }
+
+        if (!res.ok) throw new Error(`Failed to create user (${res.status})`);
       }
+
       setName("");
       setAge("");
       fetchUsers();
@@ -70,10 +74,12 @@ function App() {
   // ❌ DELETE
   const deleteUser = async (id) => {
     try {
-      const res = await fetch(`${BASE_URL}/user/${id}`, { method: "DELETE" });
-      if (!res.ok) {
-        throw new Error(`Failed to delete user (${res.status})`);
-      }
+      const res = await fetch(`${BASE_URL}/user/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error(`Failed to delete user (${res.status})`);
+
       fetchUsers();
       setError("");
     } catch (err) {
@@ -92,7 +98,7 @@ function App() {
   // --- STYLES ---
   const styles = {
     container: {
-      fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+      fontFamily: "Segoe UI, Tahoma, Geneva, Verdana, sans-serif",
       backgroundColor: "#f4f7f6",
       minHeight: "100vh",
       padding: "40px",
@@ -171,7 +177,12 @@ function App() {
     <div style={styles.container}>
       <div style={styles.card}>
         <h2 style={styles.header}>User Management</h2>
-        {error && <p style={{ color: "#dc3545", marginBottom: "12px" }}>{error}</p>}
+
+        {error && (
+          <p style={{ color: "#dc3545", marginBottom: "12px" }}>
+            {error}
+          </p>
+        )}
 
         {/* FORM */}
         <form onSubmit={handleSubmit} style={styles.form}>
@@ -205,15 +216,20 @@ function App() {
               <th style={styles.th}>Actions</th>
             </tr>
           </thead>
+
           <tbody>
             {users.map((user) => (
               <tr key={user._id}>
                 <td style={styles.td}>{user.name}</td>
                 <td style={styles.td}>{user.age}</td>
                 <td style={styles.td}>
-                  <button onClick={() => editUser(user)} style={styles.btnEdit}>
+                  <button
+                    onClick={() => editUser(user)}
+                    style={styles.btnEdit}
+                  >
                     Edit
                   </button>
+
                   <button
                     onClick={() => deleteUser(user._id)}
                     style={styles.btnDelete}
@@ -225,6 +241,7 @@ function App() {
             ))}
           </tbody>
         </table>
+
       </div>
     </div>
   );
