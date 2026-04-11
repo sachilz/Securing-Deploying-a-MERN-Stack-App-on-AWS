@@ -40,5 +40,19 @@ pipeline {
                 }
             }
         }
+
+        stage('Dependency Scan') {
+            steps {
+                dir('backend') {
+                    bat 'npm install'
+                    bat 'npm audit --audit-level=high'
+                }
+
+                dir('frontend') {
+                bat 'npm install'
+                bat 'npm audit --audit-level=high'
+                }
+            }
+        }
     }
 }
