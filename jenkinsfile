@@ -23,14 +23,14 @@ pipeline {
             }
         }
 
-        # SECRET SCAN (EARLY SECURITY)
+        //SECRET SCAN (EARLY SECURITY)
         stage('Gitleaks Secret Scan') {
             steps {
                 bat "\"${GITLEAKS_PATH}\" detect --source . --verbose"
             }
         }
 
-        # CODE ANALYSIS
+        //CODE ANALYSIS
         stage('SonarQube Scan') {
             steps {
                 withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
@@ -45,7 +45,7 @@ pipeline {
             }
         }
 
-        # QUALITY GATE (BLOCK PIPELINE IF BAD CODE)
+        //QUALITY GATE (BLOCK PIPELINE IF BAD CODE)
         stage('Quality Gate') {
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
@@ -54,7 +54,7 @@ pipeline {
             }
         }
 
-        # DEPENDENCY CHECK + BUILD VALIDATION
+        // DEPENDENCY CHECK + BUILD VALIDATION
         stage('Build Validation') {
             steps {
                 dir('backend') {
@@ -68,21 +68,21 @@ pipeline {
             }
         }
 
-        # DOCKERFILE SECURITY (HADOLINT)
+        // DOCKERFILE SECURITY (HADOLINT)
         stage('Dockerfile Security Scan (Hadolint)') {
             steps {
                 bat "\"${HADOLINT_PATH}\" Dockerfile"
             }
         }
 
-        # DOCKER BUILD (CREATE IMAGES)
+        // DOCKER BUILD (CREATE IMAGES)
         stage('Docker Compose Build') {
             steps {
                 bat 'docker compose build'
             }
         }
 
-        # IMAGE SECURITY SCAN (TRIVY AFTER BUILD)
+        // IMAGE SECURITY SCAN (TRIVY AFTER BUILD)
         stage('Trivy Container Scan') {
             steps {
                 bat "\"${TRIVY_PATH}\" image --severity HIGH,CRITICAL dockerized-mern-app-backend"
@@ -90,7 +90,7 @@ pipeline {
             }
         }
 
-        # INJECT SECRETS (ENV FILE)
+        // INJECT SECRETS (ENV FILE)
         stage('Inject Env File') {
             steps {
                 withCredentials([file(credentialsId: 'env-file', variable: 'ENV_FILE')]) {
@@ -99,7 +99,7 @@ pipeline {
             }
         }
 
-        # DEPLOY (RUN CONTAINERS)
+        // DEPLOY (RUN CONTAINERS)
         stage('Run Containers') {
             steps {
                 bat 'docker compose up -d'
