@@ -1,19 +1,37 @@
-FROM node:20-alpine
-
+# ---- Build Stage ----
+FROM alpine:latest AS build
 WORKDIR /app
+
+# Install Node.js and npm
+RUN apk add --no-cache nodejs npm
 
 # Copy dependency files first (important for caching)
 COPY package*.json ./
 
-# Install dependencies in clean + secure way
-RUN npm ci
+# Install only production dependencies securely
+RUN npm install --omit=dev && npm cache clean --force
 
-# Copy rest of the app
-COPY . .
+# ---- Production Stage ----
+FROM alpine:latest AS production
+WORKDIR /app
 
-# (optional) install nodemon only for dev mode
-RUN npm install -g nodemon
+# Install Node.js only (no npm) to aggressively reduce size
+RUN apk add --no-cache nodejs
+
+# Set environment to production
+ENV NODE_ENV=production
+
+# Run as non-root user for better security
+RUN addgroup -S node && adduser -S node -G node
+USER node
+
+# Copy dependencies from the build stage
+COPY --from=build --chown=node:node /app/node_modules ./node_modules
+
+# Copy application source code
+COPY --chown=node:node . .
 
 EXPOSE 5000
 
-CMD ["nodemon", "server.js"]
+# Use node instead of nodemon for production
+CMD ["node", "server.js"]

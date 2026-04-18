@@ -1,16 +1,29 @@
-FROM node:20-alpine
-
+# ---- Build Stage ----
+FROM node:20-alpine AS build
 WORKDIR /app
 
-# Copy both package files (important for lock-based install)
+# Copy dependency files first
 COPY package*.json ./
 
-# Use deterministic install
+# Install dependencies
 RUN npm install
 
-# Copy rest of the app
+# Copy the rest of the application code
 COPY . .
 
-EXPOSE 3000
+# Build the React application for production
+RUN npm run build
 
-CMD ["npm", "start"]
+# ---- Production Stage ----
+FROM nginx:alpine
+# Remove default nginx static assets
+RUN rm -rf /usr/share/nginx/html/*
+
+# Copy the static React build files from the build stage
+COPY --from=build /app/build /usr/share/nginx/html
+
+# Expose port 80 to the Docker host
+EXPOSE 80
+
+# Start Nginx
+CMD ["nginx", "-g", "daemon off;"]
