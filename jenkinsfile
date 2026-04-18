@@ -71,8 +71,8 @@ pipeline {
         // 8. IMAGE SECURITY SCAN (AFTER BUILD)
         stage('Trivy Container Scan') {
             steps {
-                bat "\"${TRIVY_PATH}\" image --severity HIGH,CRITICAL dockerized-mern-app-backend"
-                bat "\"${TRIVY_PATH}\" image --severity HIGH,CRITICAL dockerized-mern-app-frontend"
+                bat "\"${TRIVY_PATH}\" image --severity HIGH,CRITICAL use-management-pipline-backend"
+                bat "\"${TRIVY_PATH}\" image --severity HIGH,CRITICAL use-management-pipline-frontend"
             }
         }
 
