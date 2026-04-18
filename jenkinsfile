@@ -13,13 +13,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 git branch: 'main',
-                url: 'https://github.com/sachilz/dockerized-mern-app'
-            }
-        }
-
-        stage('List Files') {
-            steps {
-                bat 'dir'
+                url: 'https://github.com/sachilz/User-Management-App-with-Jenkins-DevSecOps-Pipeline.git'
             }
         }
 
@@ -62,44 +56,55 @@ pipeline {
         }
         
 
-        /* 5. QUALITY GATE (IMPORTANT BLOCKER)
-        stage('Quality Gate') {
+         stage('Docker Build Images') {
             steps {
-                timeout(time: 20, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
-        */
-
-        // 7. DOCKER IMAGE BUILD
-        stage('Docker Compose Build') {
-            steps {
-                bat 'docker compose build'
+                bat 'docker build -t %IMAGE_BACKEND% ./backend'
+                bat 'docker build -t %IMAGE_FRONTEND% ./frontend'
             }
         }
 
         // 8. IMAGE SECURITY SCAN (AFTER BUILD)
         stage('Trivy Container Scan') {
             steps {
-                bat "\"${TRIVY_PATH}\" image --severity HIGH,CRITICAL dockerized-mern-app-backend"
-                bat "\"${TRIVY_PATH}\" image --severity HIGH,CRITICAL dockerized-mern-app-frontend"
+                bat "\"${TRIVY_PATH}\" image --severity HIGH,CRITICAL IMAGE_BACKEND"
+                bat "\"${TRIVY_PATH}\" image --severity HIGH,CRITICAL IMAGE_FRONTEND"
             }
         }
 
-        // 9. DEPLOYMENT CONFIG (BEFORE RUN)
-        stage('Inject Env File') {
+         stage('Login to ECR') {
             steps {
-                withCredentials([file(credentialsId: 'env-file', variable: 'ENV_FILE')]) {
-                    bat "copy \"%ENV_FILE%\" backend\\.env"
+                withCredentials([usernamePassword(credentialsId: 'aws-creds', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                    bat """
+                    aws configure set aws_access_key_id %AWS_ACCESS_KEY_ID%
+                    aws configure set aws_secret_access_key %AWS_SECRET_ACCESS_KEY%
+                    aws configure set region %AWS_REGION%
+
+                    aws ecr get-login-password --region %AWS_REGION% | docker login --username AWS --password-stdin %ECR_URL%
+                    """
                 }
             }
         }
 
-        // 10. RUN APPLICATION
-        stage('Run Containers') {
+        stage('Tag & Push to ECR') {
             steps {
-                bat 'docker compose up -d'
+                bat """
+                docker tag %IMAGE_BACKEND%:latest %ECR_URL%/%IMAGE_BACKEND%:latest
+                docker tag %IMAGE_FRONTEND%:latest %ECR_URL%/%IMAGE_FRONTEND%:latest
+
+                docker push %ECR_URL%/%IMAGE_BACKEND%:latest
+                docker push %ECR_URL%/%IMAGE_FRONTEND%:latest
+                """
+            }
+        }
+
+        stage('Deploy to EC2') {
+            steps {
+                bat """
+                ssh -o StrictHostKeyChecking=no ubuntu@<EC2_IP> ^
+                \"aws ecr get-login-password --region %AWS_REGION% | docker login --username AWS --password-stdin %ECR_URL% && ^
+                docker compose pull && ^
+                docker compose up -d\"
+                """
             }
         }
     }
