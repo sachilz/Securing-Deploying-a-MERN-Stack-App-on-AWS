@@ -26,3 +26,54 @@ A production-ready Student Management Application built using the MERN stack and
 - Static Code Analysis : SonarQube detects Bugs, Code smells, Vulnerabilities
 - Container Security : Trivy scans Docker images and Pipeline fails if high/critical vulnerabilities found
 - Automated Deployment : Only secure images are pushed and Auto-deployed to AWS EC2
+
+## Project Structure 📂
+```text
+.
+├── asset/                   
+├── backend/                 
+│   ├── models/              
+│   ├── .dockerignore       
+│   ├── .gitignore           
+│   ├── Dockerfile           
+│   ├── package-lock.json
+│   ├── package.json         
+│   └── server.js            
+├── docs/                   
+├── frontend/                
+│   ├── public/              
+│   ├── src/                
+│   ├── .dockerignore
+│   ├── .gitignore
+│   ├── Dockerfile          
+│   ├── package-lock.json
+│   └── package.json         
+├── docker-compose.yml       
+├── jenkinsfile             
+├── nginx.conf               
+├── PORT_CONFIGURATION.md    
+└── README.md                
+```
+
+## Setup & Installation ⚙️
+### Clone the Repository
+```bash
+git clone https://github.com/sachilz/Securing-Deploying-a-MERN-Stack-App-on-AWS.git
+```
+
+### Navigate project folder
+```bash
+cd Securing-Deploying-a-MERN-Stack-App-on-AWS
+```
+
+### Run with Docker Compose
+```bash
+docker compose up --build -d
+```
+
+### Access the App
+```bash
+http://localhost
+```
+
+## Deployment Workflow ☁️
